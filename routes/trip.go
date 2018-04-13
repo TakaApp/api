@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -59,7 +60,14 @@ func GetTrip(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, "Sorry (4)")
 	}
 
+	var result GTFSResult
+	if err := json.Unmarshal(rawResponseBody, &result); err != nil {
+		log.Print(err)
+	}
+
 	response.Body.Close()
 
-	return c.String(http.StatusOK, string(rawResponseBody))
+	simplifiedResult, _ := json.Marshal(result)
+
+	return c.String(http.StatusOK, string(simplifiedResult))
 }
