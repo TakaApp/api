@@ -1,0 +1,29 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  namespace: default
+  name: taka-api
+  labels:
+    app: taka-api
+spec:
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: taka-api
+    spec:
+      containers:
+      - image: gcr.io/k8s-aksels/github-takaapp-api:v0.2
+        name: taka-api-container
+        resources:
+          requests:
+            cpu: "20m"
+            memory: "55M"
+        ports:
+        - containerPort: 1323
+          name: taka-api-port
+      restartPolicy: Always
