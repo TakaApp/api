@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: default
+  name: taka-api-svc
+  labels:
+    app: taka-api-app
+spec:
+  selector:
+    app: taka-api
+  type: NodePort
+  ports:
+  - name: taka-api-svc-port
+    port: 8080
+    targetPort: 1323
