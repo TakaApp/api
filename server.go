@@ -8,6 +8,7 @@ import (
 func main() {
 	e := echo.New()
 
+	e.GET("/", routes.GetDocs)
 	e.POST("/trip", routes.GetTrip)
 
 	e.Logger.Fatal(e.Start(":1323"))
