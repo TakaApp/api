@@ -14,7 +14,7 @@ type getTripRequest struct {
 	From     string `json:"from"`
 	To       string `json:"to"`
 	ArriveAt string `json:"arriveAt"`
-	LeaveAt  string `json:"leaveAt`
+	LeaveAt  string `json:"leaveAt"`
 	Date     string `json:"date"`
 }
 
