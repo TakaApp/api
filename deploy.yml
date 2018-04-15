@@ -17,7 +17,7 @@ spec:
         app: taka-api
     spec:
       containers:
-      - image: gcr.io/k8s-aksels/github-takaapp-api:v0.3
+      - image: gcr.io/k8s-aksels/github-takaapp-api:v0.5
         name: taka-api-container
         resources:
           requests:
