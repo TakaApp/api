@@ -1,8 +1,8 @@
 package routes
 
-// Location describes the main places
-// such as the origin, destination or a bus stop
-type Location struct {
+// A Place is where a journey starts or ends
+// or a transit stop along the way.
+type Place struct {
 	Name      string  `json:"name"`
 	StopID    string  `json:"stopID"`
 	Longitude float64 `json:"lon"`
@@ -72,8 +72,8 @@ type Leg struct {
 	// ex: Foch Cathedrale ~ Direction
 	HeadSign string `json:"headSign"`
 
-	From Location `json:"from"`
-	To   Location `json:"to"`
+	From Place `json:"from"`
+	To   Place `json:"to"`
 }
 
 // Itinerary describes an .. itinerary
