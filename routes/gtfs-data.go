@@ -92,25 +92,32 @@ type Leg struct {
 	To   Place `json:"to"`
 }
 
-// Itinerary describes an .. itinerary
+// An Itinerary is one complete way of getting from
+// the start location to the end location.
 type Itinerary struct {
-	// timestamps of the start & end time
+	// Time that the trip departs
 	StartTime int `json:"startTime"`
-	EndTime   int `json:"endTime"`
+	// Time that the trip arrives
+	EndTime int `json:"endTime"`
 
-	// duration in seconds
+	// Duration of the trip on this itinerary, in seconds
 	Duration int `json:"duration"`
-	// duration composition, in seconds
-	WalkTime    int `json:"walkTime"`
+	// How much time is spent walking, in seconds
+	WalkTime int `json:"walkTime"`
+	// How much time is spent on transit, in seconds
 	TransitTime int `json:"transitTime"`
+	// How much time is spent waiting for transit to arrive, in seconds
 	WaitingTime int `json:"waitingTime"`
 
-	// walk distance in meters
+	// How far the user has to walk, in meters
 	WalkDistance float64 `json:"walkDistance"`
-	// number of transfers
+	// The number of transfers this trip has.
 	Transfers int `json:"transfers"`
 
-	// different main steps of the itinerary
+	// A list of Legs. Each Leg is either a walking (cycling, car)
+	// portion of the trip, or a transit trip on a particular vehicle.
+	// So a trip where the use walks to the Q train, transfers to the 6,
+	// then walks to their destination, has four legs.
 	Legs []Leg `json:"legs"`
 }
 
