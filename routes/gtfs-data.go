@@ -123,6 +123,16 @@ type Itinerary struct {
 
 // GTFSPlan consists of multiples itineraries
 type GTFSPlan struct {
+	// The time and date of travel
+	Date int `json:"date"`
+
+	// The origin
+	From Place `json:"from"`
+
+	// The destination
+	To Place `json:"to"`
+
+	// A list of possible itineraries
 	Itineraries []Itinerary `json:"itineraries"`
 }
 
