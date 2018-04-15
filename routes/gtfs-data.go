@@ -3,13 +3,29 @@ package routes
 // A Place is where a journey starts or ends
 // or a transit stop along the way.
 type Place struct {
+	// For transit stops, the name of the stop.
+	// For points of interest, the name of the POI
 	Name      string  `json:"name"`
 	StopID    string  `json:"stopID"`
 	Longitude float64 `json:"lon"`
 	Latitude  float64 `json:"lat"`
 
+	// The time the rider will depart the place
 	Departure int `json:"departure"`
-	Arrival   int `json:"arrival"`
+	// The time the rider will arrive at the place
+	Arrival int `json:"arrival"`
+
+	// For transit trips, the stop index
+	// (numbered from zero from the start of the trip
+	StopIndex int `json:"stopIndex"`
+
+	// The "code" of the stop. Depending on the transit
+	// agency, this is often something that users care about
+	StopCode string `json:"stopCode"`
+
+	// For transit trips, the sequence number of the stop.
+	// Per GTFS, these numbers are increasing
+	StopSequence int `json:"stopSequence"`
 }
 
 // Leg is a struct defining a main step of
