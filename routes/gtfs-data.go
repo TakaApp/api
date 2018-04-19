@@ -28,6 +28,13 @@ type Place struct {
 	StopSequence int `json:"stopSequence"`
 }
 
+// LegGeometry : A leg's geometry
+type LegGeometry struct {
+	// A list of coordinates encoded as a string
+	Points string `json:"points"`
+	Length int    `json:"length"`
+}
+
 // Leg is a struct defining a main step of
 // the whole trip. Example:
 // - Walk till the bus      (1st leg)
@@ -90,6 +97,9 @@ type Leg struct {
 
 	From Place `json:"from"`
 	To   Place `json:"to"`
+
+	// The leg's geometry
+	LegGeometry `json:"legGeometry"`
 }
 
 // An Itinerary is one complete way of getting from
