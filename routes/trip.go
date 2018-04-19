@@ -13,9 +13,9 @@ import (
 type getTripRequest struct {
 	From     string `json:"from"`
 	To       string `json:"to"`
-	ArriveAt string `json:"arriveAt"`
-	LeaveAt  string `json:"leaveAt"`
+	Time     string `json:"time"`
 	Date     string `json:"date"`
+	ArriveBy string `json:"arriveBy"`
 }
 
 // GetTrip returns possible itineraries between two points
@@ -39,11 +39,12 @@ func GetTrip(c echo.Context) error {
 	q := req.URL.Query()
 	q.Add("fromPlace", request.From)
 	q.Add("toPlace", request.To)
-	q.Add("time", request.LeaveAt)
+	q.Add("time", request.Time)
 	q.Add("date", request.Date)
 	q.Add("mode", "TRANSIT,WALK")
 	q.Add("maxWalkDistance", "500000")
-	q.Add("arriveBy", "false")
+	q.Add("arriveBy", request.ArriveBy)
+	q.Add("locale", "fr")
 
 	req.URL.RawQuery = q.Encode()
 
