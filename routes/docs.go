@@ -11,5 +11,5 @@ import (
 // it is important otherwise services (eq cloudfare) will health check on /
 // and will think the server died
 func GetDocs(c echo.Context) error {
-	return c.String(http.StatusOK, "Version 0.6")
+	return c.String(http.StatusOK, "Version 0.7")
 }
