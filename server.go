@@ -16,6 +16,7 @@ func main() {
 
 	e.GET("/", routes.GetDocs)
 	e.POST("/trip", routes.GetTrip)
+	e.GET("/search-stop/:text", routes.GetSearchStop)
 
 	e.Logger.Fatal(e.Start(":1323"))
 }
