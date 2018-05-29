@@ -75,12 +75,15 @@ func fetchGoogleResults(query string) ([]Result, error) {
 		Components: map[maps.Component]string{
 			maps.ComponentCountry: "fr",
 		},
+		StrictBounds: true,
+		Location:     &maps.LatLng{Lat: 47.215033, Lng: -1.553952},
+		Radius:       15000,
 	}
 	// TODO can improve results with strictBounds & location
 
 	googleResults, err := googleClient.PlaceAutocomplete(context.Background(), request)
 	if err != nil {
-		log.Printf("err: %v\n", err)
+		// log.Printf("err: %v\n", err)
 		return nil, err
 	}
 
@@ -117,7 +120,13 @@ func GetSearchLocation(c echo.Context) error {
 	go func() {
 		algoliaResults, _ := fetchAlgoliaResults(text)
 		m.Lock()
-		results = append(results, algoliaResults...)
+		existingStops := map[string]bool{}
+		for _, result := range algoliaResults {
+			if !existingStops[result.Name] {
+				results = append(results, result)
+				existingStops[result.Name] = true
+			}
+		}
 		m.Unlock()
 		wg.Done()
 	}()
