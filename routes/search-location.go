@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sync"
 
 	"github.com/algolia/algoliasearch-client-go/algoliasearch"
 	"github.com/labstack/echo"
@@ -20,36 +21,34 @@ type Result struct {
 }
 
 var (
-	googleClient  *maps.Client
-	algoliaClient algoliasearch.Client
+	googleClient *maps.Client
+
+	algoliaClient         algoliasearch.Client
+	algoliaIndex          algoliasearch.Index
+	algoliaSearchSettings algoliasearch.Map
 )
 
 func init() {
 	googleClient, _ = maps.NewClient(maps.WithAPIKey(os.Getenv("GOOGLE_PLACES_API_KEY")))
 	algoliaClient = algoliasearch.NewClient(os.Getenv("ALGOLIA_APP_ID"), os.Getenv("ALGOLIA_SECRET"))
-}
-
-// GetSearchStop returns a list of stops
-func GetSearchStop(c echo.Context) error {
-	text := c.Param("text")
-
-	// !Algolia
-	index := algoliaClient.InitIndex("stops")
-
-	settings := algoliasearch.Map{
+	algoliaIndex = algoliaClient.InitIndex("stops")
+	algoliaSearchSettings = algoliasearch.Map{
 		"page":                 0,
 		"hitsPerPage":          5,
 		"attributesToRetrieve": []string{"stop_name", "stop_lat", "stop_lon"},
 	}
+}
 
-	res, err := index.Search(text, settings)
+func fetchAlgoliaResults(query string) ([]Result, error) {
+	var hits []Result
+
+	res, err := algoliaIndex.Search(query, algoliaSearchSettings)
 
 	if err != nil {
 		log.Printf("err: %v\n", err)
-		return c.JSON(http.StatusInternalServerError, err)
+		return nil, err
 	}
 
-	var hits []Result
 	for _, result := range res.Hits {
 		stopName := result["stop_name"].(string)
 
@@ -64,9 +63,14 @@ func GetSearchStop(c echo.Context) error {
 		})
 	}
 
-	// !Google
+	return hits, nil
+}
+
+func fetchGoogleResults(query string) ([]Result, error) {
+	var hits []Result
+
 	request := &maps.PlaceAutocompleteRequest{
-		Input:    text,
+		Input:    query,
 		Language: "fr",
 		Components: map[maps.Component]string{
 			maps.ComponentCountry: "fr",
@@ -77,7 +81,7 @@ func GetSearchStop(c echo.Context) error {
 	googleResults, err := googleClient.PlaceAutocomplete(context.Background(), request)
 	if err != nil {
 		log.Printf("err: %v\n", err)
-		return c.JSON(http.StatusInternalServerError, err)
+		return nil, err
 	}
 
 	for _, prediction := range googleResults.Predictions {
@@ -88,5 +92,37 @@ func GetSearchStop(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, hits)
+	return hits, nil
+}
+
+// GetSearchLocation returns a list of Results from algolia & google
+func GetSearchLocation(c echo.Context) error {
+	var results []Result
+
+	text := c.Param("text")
+
+	var wg sync.WaitGroup
+	var m sync.Mutex
+
+	wg.Add(2)
+
+	go func() {
+		googleResults, _ := fetchGoogleResults(text)
+		m.Lock()
+		results = append(results, googleResults...)
+		m.Unlock()
+		wg.Done()
+	}()
+
+	go func() {
+		algoliaResults, _ := fetchAlgoliaResults(text)
+		m.Lock()
+		results = append(results, algoliaResults...)
+		m.Unlock()
+		wg.Done()
+	}()
+
+	wg.Wait()
+
+	return c.JSON(http.StatusOK, results)
 }
