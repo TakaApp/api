@@ -17,8 +17,25 @@ spec:
         app: taka-api
     spec:
       containers:
-      - image: gcr.io/k8s-aksels/github-takaapp-api:v0.9
+      - image: gcr.io/k8s-aksels/github-takaapp-api:v1.0
         name: taka-api-container
+        imagePullPolicy: Always
+        env:
+        - name: GOOGLE_PLACES_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: taka-api-secret
+              key: GOOGLE_PLACES_API_KEY
+        - name: ALGOLIA_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: taka-api-secret
+              key: ALGOLIA_SECRET
+        - name: ALGOLIA_APP_ID
+          valueFrom:
+            secretKeyRef:
+              name: taka-api-secret
+              key: ALGOLIA_APP_ID
         resources:
           requests:
             cpu: "20m"
@@ -27,4 +44,3 @@ spec:
         - containerPort: 1323
           name: taka-api-port
       restartPolicy: Always
-
