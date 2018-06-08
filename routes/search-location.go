@@ -1,7 +1,9 @@
 package routes
 
 import (
-	"context"
+	"bytes"
+	"encoding/json"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -9,27 +11,46 @@ import (
 
 	"github.com/algolia/algoliasearch-client-go/algoliasearch"
 	"github.com/labstack/echo"
-	"googlemaps.github.io/maps"
 )
 
+// Result is one object contained in the array returned by the API
 type Result struct {
-	Type      string  `json:"type"`
-	Name      string  `json:"stop_name"`
+	// either FREE or STOP
+	Type string `json:"type"`
+	Name string `json:"name"`
+
 	Latitude  float64 `json:"lat"`
-	Longitude float64 `json:"lon"`
-	PlaceID   string  `json:"place_id"`
+	Longitude float64 `json:"lng"`
+}
+
+type algoliaGeoLoc struct {
+	Lat float64 `json:"lat"`
+	Lng float64 `json:"lng"`
+}
+type algoliaPlacesHit struct {
+	City []string `json:"city"`
+
+	LatLng     algoliaGeoLoc `json:"_geoloc"`
+	LocalNames []string      `json:"locale_names"`
+}
+
+// AlgoliaPlacesSuggestion describes the structure returned
+// by the Algolia Places API
+type AlgoliaPlacesSuggestion struct {
+	Hits []algoliaPlacesHit `json:"hits"`
 }
 
 var (
-	googleClient *maps.Client
-
 	algoliaClient         algoliasearch.Client
 	algoliaIndex          algoliasearch.Index
 	algoliaSearchSettings algoliasearch.Map
 )
 
+// AlgoliaPlacesURL is the url where we can post our query
+// TODO we should implement the 2 others fall back urls
+const AlgoliaPlacesURL = "https://places-dsn.algolia.net/1/places/query"
+
 func init() {
-	googleClient, _ = maps.NewClient(maps.WithAPIKey(os.Getenv("GOOGLE_PLACES_API_KEY")))
 	algoliaClient = algoliasearch.NewClient(os.Getenv("ALGOLIA_APP_ID"), os.Getenv("ALGOLIA_SECRET"))
 	algoliaIndex = algoliaClient.InitIndex("stops")
 	algoliaSearchSettings = algoliasearch.Map{
@@ -67,31 +88,45 @@ func fetchAlgoliaResults(query string) ([]Result, error) {
 }
 
 func fetchGoogleResults(query string) ([]Result, error) {
+	var algoliaResult AlgoliaPlacesSuggestion
 	var hits []Result
 
-	request := &maps.PlaceAutocompleteRequest{
-		Input:    query,
-		Language: "fr",
-		Components: map[maps.Component]string{
-			maps.ComponentCountry: "fr",
-		},
-		StrictBounds: true,
-		Location:     &maps.LatLng{Lat: 47.215033, Lng: -1.553952},
-		Radius:       15000,
+	values := map[string]string{
+		// search query
+		"query": query,
+		// we only have a french audience
+		"language": "fr",
+		// 5 is way enough
+		"hitsPerPage": "5",
+		// and we limit to
+		//  - France
+		"countries": "fr",
+		//  - around Nantes
+		"aroundLatLng": "47.215033,-1.553952",
+		//  - in a 15 km radius
+		"aroundRadius": "15000",
 	}
-	// TODO can improve results with strictBounds & location
 
-	googleResults, err := googleClient.PlaceAutocomplete(context.Background(), request)
+	q, _ := json.Marshal(values)
+	response, err := http.Post(AlgoliaPlacesURL, "application/json", bytes.NewBuffer(q))
+
 	if err != nil {
-		// log.Printf("err: %v\n", err)
+		log.Printf("err :%v\n", err)
 		return nil, err
 	}
 
-	for _, prediction := range googleResults.Predictions {
+	defer response.Body.Close()
+
+	jsonData, err := ioutil.ReadAll(response.Body)
+
+	json.Unmarshal(jsonData, &algoliaResult)
+
+	for _, suggestion := range algoliaResult.Hits {
 		hits = append(hits, Result{
-			Type:    "GOOGLE",
-			Name:    prediction.Description,
-			PlaceID: prediction.PlaceID,
+			Type:      "FREE",
+			Name:      suggestion.LocalNames[0],
+			Latitude:  suggestion.LatLng.Lat,
+			Longitude: suggestion.LatLng.Lng,
 		})
 	}
 
