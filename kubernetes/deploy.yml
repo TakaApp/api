@@ -17,7 +17,7 @@ spec:
         app: taka-api
     spec:
       containers:
-      - image: gcr.io/k8s-aksels/github-takaapp-api:v1.0
+      - image: gcr.io/k8s-aksels/github-takaapp-api:v1.1
         name: taka-api-container
         imagePullPolicy: Always
         env:
