@@ -87,7 +87,7 @@ func fetchAlgoliaResults(query string) ([]Result, error) {
 	return hits, nil
 }
 
-func fetchGoogleResults(query string) ([]Result, error) {
+func fetchAlgoliaPlacesResults(query string) ([]Result, error) {
 	var algoliaResult AlgoliaPlacesSuggestion
 	var hits []Result
 
@@ -124,7 +124,7 @@ func fetchGoogleResults(query string) ([]Result, error) {
 	for _, suggestion := range algoliaResult.Hits {
 		hits = append(hits, Result{
 			Type:      "FREE",
-			Name:      suggestion.LocalNames[0],
+			Name:      suggestion.LocalNames[0] + ", " + suggestion.City[0],
 			Latitude:  suggestion.LatLng.Lat,
 			Longitude: suggestion.LatLng.Lng,
 		})
@@ -145,7 +145,7 @@ func GetSearchLocation(c echo.Context) error {
 	wg.Add(2)
 
 	go func() {
-		googleResults, _ := fetchGoogleResults(text)
+		googleResults, _ := fetchAlgoliaPlacesResults(text)
 		m.Lock()
 		results = append(results, googleResults...)
 		m.Unlock()
