@@ -122,9 +122,19 @@ func fetchAlgoliaPlacesResults(query string) ([]Result, error) {
 	json.Unmarshal(jsonData, &algoliaResult)
 
 	for _, suggestion := range algoliaResult.Hits {
+
+		if len(suggestion.LocalNames) == 0 {
+			continue
+		}
+
+		name := suggestion.LocalNames[0]
+		if len(suggestion.City) > 0 {
+			name = name + ", " + suggestion.City[0]
+		}
+
 		hits = append(hits, Result{
 			Type:      "FREE",
-			Name:      suggestion.LocalNames[0] + ", " + suggestion.City[0],
+			Name:      name,
 			Latitude:  suggestion.LatLng.Lat,
 			Longitude: suggestion.LatLng.Lng,
 		})
