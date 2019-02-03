@@ -17,6 +17,7 @@ func main() {
 	e.GET("/", routes.GetDocs)
 	e.POST("/trip", routes.GetTrip)
 	e.GET("/search-location/:text", routes.GetSearchLocation)
+	e.POST("/reverse-geocoding", routes.ReverseGeocoding)
 
 	e.Logger.Fatal(e.Start(":1323"))
 }
