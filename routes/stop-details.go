@@ -10,44 +10,75 @@ import (
 	"github.com/labstack/echo"
 )
 
+func fetchPatterns(routeID string) ([]Pattern, error) {
+	var patterns []Pattern
+
+	// build a request
+	req, _ := http.NewRequest("GET", fmt.Sprintf("http://gtfs.aksels.io/otp/routers/default/index/routes/%s/patterns", routeID), nil)
+
+	// query our gtfs api
+	result, err := http.Get(req.URL.String())
+	if err != nil {
+		return nil, err
+	}
+
+	// read and close at some point
+	defer result.Body.Close()
+	body, _ := ioutil.ReadAll(result.Body)
+
+	// fit this in our structures
+	err = json.Unmarshal(body, &patterns)
+	if err != nil {
+		return nil, err
+	}
+
+	return patterns, nil
+}
+
+func fetchPattern(patternID string) (Pattern, error) {
+	var p Pattern
+
+	// build a request
+	req, _ := http.NewRequest("GET", fmt.Sprintf("http://gtfs.aksels.io/otp/routers/default/index/patterns/%s", patternID), nil)
+
+	// query our gtfs api
+	result, err := http.Get(req.URL.String())
+	if err != nil {
+		return p, err
+	}
+
+	// read and close at some point
+	defer result.Body.Close()
+	singlePatternReqResponseBody, _ := ioutil.ReadAll(result.Body)
+
+	// fit this in our structures
+	err = json.Unmarshal(singlePatternReqResponseBody, &p)
+	if err != nil {
+		log.Print(err)
+	}
+
+	return p, nil
+}
+
 // GetStopDetails returns stops between two stops
 func GetStopDetails(c echo.Context) error {
+	// retrieve our parameters
 	routeID := c.Param("routeID")
 	fromStopID := c.Param("from")
 	toStopID := c.Param("to")
 
 	// fetch patterns
-	patternReq, _ := http.NewRequest("GET", fmt.Sprintf("http://gtfs.aksels.io/otp/routers/default/index/routes/%s/patterns", routeID), nil)
-	patternReqResult, _ := http.Get(patternReq.URL.String())
+	patterns, _ := fetchPatterns(routeID)
 
-	var patterns []Pattern
-	patternReqResponseBody, _ := ioutil.ReadAll(patternReqResult.Body)
-
-	defer patternReqResult.Body.Close()
-
-	if err := json.Unmarshal(patternReqResponseBody, &patterns); err != nil {
-		log.Print(err)
-	}
-
-	var stopDetails []Stop
 	for _, pattern := range patterns {
-		stopDetails = nil
+		var stopDetails []Stop
 
-		// fetch data about a single pattern
-		singlePatternReq, _ := http.NewRequest("GET", fmt.Sprintf("http://gtfs.aksels.io/otp/routers/default/index/patterns/%s", pattern.ID), nil)
-		singlePatternReqResult, _ := http.Get(singlePatternReq.URL.String())
-
-		var p Pattern
-		singlePatternReqResponseBody, _ := ioutil.ReadAll(singlePatternReqResult.Body)
-
-		defer singlePatternReq.Body.Close()
-
-		if err := json.Unmarshal(singlePatternReqResponseBody, &p); err != nil {
-			log.Print(err)
-		}
+		// fetch all data from this pattern (note: quite a heavy response)
+		p, _ := fetchPattern(pattern.ID)
 
 		haveFoundFrom := false
 		haveFoundTo := false
+
 		for _, stop := range p.Stops {
 			if stop.ID == fromStopID {
 				haveFoundFrom = true
@@ -65,6 +96,7 @@ func GetStopDetails(c echo.Context) error {
 			}
 		}
 
+		// we have found a way
 		if haveFoundFrom && haveFoundTo {
 			// maybe need to reverse?
 			if stopDetails[0].ID == toStopID {
@@ -74,11 +106,12 @@ func GetStopDetails(c echo.Context) error {
 					stopDetails[i], stopDetails[opp] = stopDetails[opp], stopDetails[i]
 				}
 			}
-			break
+
+			result, _ := json.Marshal(stopDetails)
+
+			return c.String(http.StatusOK, string(result))
 		}
 	}
 
-	result, _ := json.Marshal(stopDetails)
-
-	return c.String(http.StatusOK, string(result))
+	return c.String(http.StatusNotFound, "404")
 }
