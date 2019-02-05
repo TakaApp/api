@@ -71,6 +71,9 @@ type Leg struct {
 	//  - null.
 	RouteColor string `json:"routeColor"`
 
+	// RouteID self explanatory
+	RouteID string `json:"routeID"`
+
 	// For transit leg:
 	//  - the route's text color (if one exists)
 	// For non-transit legs
@@ -100,6 +103,8 @@ type Leg struct {
 
 	// The leg's geometry
 	LegGeometry `json:"legGeometry"`
+
+	Stops []Stop `json:"stops"`
 }
 
 // An Itinerary is one complete way of getting from
@@ -154,4 +159,19 @@ type GTFSPlan struct {
 // but we ignore them for the moment
 type GTFSResult struct {
 	Plan GTFSPlan `json:"plan"`
+}
+
+type Stop struct {
+	ID        string  `json:"id"`
+	Name      string  `json:"name"`
+	Longitude float64 `json:"lon"`
+	Latitude  float64 `json:"lat"`
+}
+
+type Pattern struct {
+	ID   string `json:"id"`
+	Desc string `json:"desc"`
+
+	// Stops are ordered !
+	Stops []Stop `json:"stops"`
 }
