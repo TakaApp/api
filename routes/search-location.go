@@ -107,11 +107,20 @@ func fetchAlgoliaPlacesResults(query string) ([]Result, error) {
 		"aroundRadius": "15000",
 	}
 
+	client := &http.Client{}
+
 	q, _ := json.Marshal(values)
-	response, err := http.Post(AlgoliaPlacesURL, "application/json", bytes.NewBuffer(q))
+
+	// build a request
+	req, _ := http.NewRequest("POST", AlgoliaPlacesURL, bytes.NewBuffer(q))
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("X-Algolia-Application-Id", os.Getenv("ALGOLIA_PLACES_APP_ID"))
+	req.Header.Add("X-Algolia-API-Key", os.Getenv("ALGOLIA_PLACES_API_KEY"))
+
+	response, err := client.Do(req)
 
 	if err != nil {
-		log.Printf("err :%v\n", err)
+		log.Printf("err fetchAlgoliaPlacesResults: %v\n", err)
 		return nil, err
 	}
 

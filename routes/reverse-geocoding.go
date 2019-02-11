@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"sync"
 
 	"github.com/labstack/echo"
@@ -20,9 +21,17 @@ func fetchAlgoliaReverseGeocoding(lat float64, lng float64) ([]Result, error) {
 	var algoliaResult AlgoliaPlacesSuggestion
 	var hits []Result
 
-	url := fmt.Sprintf("%s?aroundLatLng=%f, %f&hitsPerPage=5&language=fr", AlgoliaPlacesReverseGeocodingURL, lat, lng)
+	client := &http.Client{}
 
-	response, err := http.Get(url)
+	url := fmt.Sprintf("%s?aroundLatLng=%f, %f&hitsPerPage=1&language=fr", AlgoliaPlacesReverseGeocodingURL, lat, lng)
+
+	req, _ := http.NewRequest("GET", url, nil)
+
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("X-Algolia-Application-Id", os.Getenv("ALGOLIA_PLACES_APP_ID"))
+	req.Header.Add("X-Algolia-API-Key", os.Getenv("ALGOLIA_PLACES_API_KEY"))
+
+	response, err := client.Do(req)
 
 	if err != nil {
 		log.Printf("err :%v\n", err)
